@@ -1,26 +1,24 @@
 # 1. Kubernetes Workshop
 
-This workshop/tutorial contains a number of different sections, each addressing a specific aspect of running workloads (containers) in Kubernetes, including how to design CI/CD pipelines.
+This workshop/tutorial contains a number of different sections, each addressing a specific aspect of running workloads (containers) in Kubernetes in Azure.
 
 You will go through the following steps to complete the workshop:
 
 * Use Azure Portal and Azure Cloud Shell
 * Setup Azure Container Registry to build and store docker images
 * Create Kubernetes Cluster using AKS (Azure Kubernetes Service)
-* Deploy application to Kubernetes
-* Use Helm to create templated Kubernetes applications
-* and more...
+* Deploy and expose applications
+* Storage mounting options in AKS ​
+* Secret Management in AKS
+
 
 # 2. Prerequisites
 
 ## 2.1 Subscription
-You need a valid Azure subscription. If you do not have one, you can sign up for a free trial account here: <https://azure.microsoft.com/en-us/free/>
-
-To use a specific subscription, use the ````account```` command like this (with your subscription id):
+You need a valid Azure subscription. To use a specific subscription, use the ````account```` command like this (with your subscription id):
 ````
 az account set --subscription <subscription-id>
 ````
-If don't h ave a shell set up to run this command, there will be instructions further down to do that.
 
 ## 2.2. Azure Portal
 
@@ -261,169 +259,6 @@ To see the application in action, open a web browser to the external IP address.
 
 ![Image of Kubernetes cluster on Azure](./media/azure-vote.png)
 
-### 3.5.6. Update an application in Azure Kubernetes Service (AKS)
-
-After an application has been deployed in Kubernetes, it can be updated by specifying a new container image or image version. When doing so, the update is staged so that only a portion of the deployment is concurrently updated. This staged update enables the application to keep running during the update. It also provides a rollback mechanism if a deployment failure occurs.
-
-In this step the sample Azure Vote app is updated. You learn how to:
-
-* Update the front-end application code
-* Create an updated container image
-* Deploy the updated container image to AKS
-
-### 3.5.7. Increase number of pods
-
-Let's make a change to the sample application, then update the version already deployed to your AKS cluster. 
-
-First we want to make sure that the update can be completed without service interruption. For this to be possible, we need multiple instances of the front end pod. This will enable Kubernetes to update the app as a "rolling update", which means that it will restart the pods in sequence making sure that one or more is always running.
-
-To achieve that, open the sample manifest file `azure-vote-all-in-one-redis.yaml` and change the number of replicas of the ````azure-vote-front```` pod from 1 to 3, on line 34 (or similar).
-
-````bash
-code azure-vote-all-in-one-redis.yaml
-````
-
-Change
-
-```yaml
-kind: Deployment
-metadata:
-  name: azure-vote-front
-spec:
-  replicas: 1
-```
-
-to
-
-```yaml
-kind: Deployment
-metadata:
-  name: azure-vote-front
-spec:
-  replicas: 3
-```
-
-To activate the new configuration, use ````kubectl apply```` in cloud shell:
-
-````bash
-kubectl apply -f azure-vote-all-in-one-redis.yaml
-````
-
-Now you can verify the number of running front-end instances with the ```kubectl get pods``` command:
-
-```bash
-$ kubectl get pods
-NAME                                READY   STATUS    RESTARTS   AGE
-azure-vote-back-769d45cfcb-gk496    1/1     Running   0          51m
-azure-vote-front-74b865bcd9-52xkm   1/1     Running   0          49s
-azure-vote-front-74b865bcd9-94lrz   1/1     Running   0          49s
-azure-vote-front-74b865bcd9-xfsq8   1/1     Running   0          18m
-```
-
-### 3.5.8. Update the application
-
-The sample application source code can be found inside of the *azure-vote* directory. Open the *config_file.cfg* file with an editor, such as `code`:
-
-```bash
-code azure-vote/config_file.cfg
-```
-
-Change the values for *VOTE1VALUE* and *VOTE2VALUE* to different colors. The following example shows the updated color values:
-
-```bash
-# UI Configurations
-TITLE = 'Azure Voting App'
-VOTE1VALUE = 'Blue'
-VOTE2VALUE = 'Purple'
-SHOWHOST = 'false'
-```
-
-Save and close the file.
-
-### 3.5.9. Update the container image
-
-To build a new front-end image, use ```az acr build``` the same way as before, but make sure to change the version from ````v1```` to ````v2````
-
-```bash
-az acr build --image azure-vote-front:v2 --registry <your unique ACR name> --file Dockerfile .
-```
-
-This will build a new container image, with the code changes you did in the previous step. The image will be stored in ACR with the same name as before, but with a new version (v2).
-
-You can check that all went well with the ````az acr repository show-tags```` command:
-
-````bash
-az acr repository show-tags --name <Your ACR Name> --repository azure-vote-front --output table
-````
-
-### 3.5.10. Deploy the updated application
-
-To update the application, you can use  ```kubectl set``` and specify the new application version, but the preferred way is to edit the kubernetes manifest to change the version:
-
-Open the file ````azure-vote-all-in-one-redis.yaml```` again and change ````image:```` from ````<Your ACR Name>.azurecr.io/azure-vote-front:v1```` to ````<Your ACR Name>.azurecr.io/azure-vote-front:v2```` on line 47 (or close to 47...).
-
-Change
-
-```yaml
-    spec:
-      containers:
-      - name: azure-vote-front
-        image: <Your ACR Name>.azurecr.io/azure-vote-front:v1
-```
-
-To
-
-```yaml
-    spec:
-      containers:
-      - name: azure-vote-front
-        image: <Your ACR Name>.azurecr.io/azure-vote-front:v2
-```
-
-And then run:
-
-````bash
-kubectl apply -f azure-vote-all-in-one-redis.yaml
-````
-
-Note in the output of the command, how only the azure-vote-front deployment is *configured* while the others are *unchanged*. This is because the changes made to the manifest only impacts the azure-vote-front deployment. In other words, only the necessary things are changed, while the rest is left untouched.
-
-````bash
-deployment.apps/azure-vote-back unchanged
-service/azure-vote-back unchanged
-deployment.apps/azure-vote-front configured
-service/azure-vote-front unchanged
-````
-
-To monitor the deployment, use the ```kubectl get pods``` command. As the updated application is deployed, your pods are terminated and re-created with the new container image.
-
-```bash
-kubectl get pods
-```
-
-The following example output shows pods terminating and new instances running as the deployment progresses:
-
-```bash
-kubectl get pods
-
-NAME                               READY     STATUS        RESTARTS   AGE
-azure-vote-back-2978095810-gq9g0   1/1       Running       0          5m
-azure-vote-front-1297194256-tpjlg  1/1       Running       0          1m
-azure-vote-front-1297194256-tptnx  1/1       Running       0          5m
-azure-vote-front-1297194256-zktw9  1/1       Terminating   0          1m
-```
-
-### 3.5.11. Test the updated application
-
-To view the updated application, first get the external IP address of the `azure-vote-front` service (will be the same as before, since the service was not updated, only the pod):
-
-```console
-kubectl get service azure-vote-front
-```
-
-Now open a local web browser to the IP address.
-
-![Image of Kubernetes cluster on Azure](./media/vote-app-updated-external.png)
 
 ### 3.5.12. Clean-up
 
@@ -432,94 +267,3 @@ Make sure the application is deleted from the cluster (otherwise a later step, w
 ````bash
 kubectl delete -f azure-vote-all-in-one-redis.yaml
 ````
-
-
-## 3.7. Extra tasks
-
-If you still have time, and want to learn more.
-
-## 3.8. HELM
-
-Helm is an open-source packaging tool that helps you install and manage the life cycle of Kubernetes applications. Similar to Linux package managers such as APT and Yum, Helm is used to manage Kubernetes charts, which are packages of preconfigured Kubernetes resources.
-
-In this exercise you will use Helm to deploy the same application you just deployed using ````kubectl````.
-
-### 3.8.1. Using Helm
-
-Cloud shell already has helm installed, with the latest version of Helm 3.
-
-If you want to, you can check if helm works by running the ````helm version````command:
-
-````bash
-helm version
-````
-
-Which should give something like:
-
-````bash
-version.BuildInfo{Version:"v3.0.2", GitCommit:"19e47ee3283ae98139d98460de796c1be1e3975f", GitTreeState:"clean", GoVersion:"go1.13.5"}
-````
-
-**Note: In the previous version of Helm, there was a server side component as well, named "Tiller". This is no longer the case.**
-
-### 3.8.2. Helm and Azure Vote
-
-The repository that you cloned in the beginning of the tutorial (or during preparations) contains a **helm chart** to deploy the application using **Helm**.
-
-Start by changing the directory to where the **helm chart** is located.
-
-````bash
-cd ..
-cd application/azvote-helmchart
-````
-
-Then you need to update your helm chart to point to the container image you created earlier in the **Azure Container Registry**. This is done in the file ````deployments.yaml```` located in ````azvote-helmchart/templates/````. This is essentially the same thing you did earlier in you kubernetes manifest .yaml file.
-
-Change the line:
-
-````bash
-image: microsoft/azure-vote-front:v1
-````
-
-to
-
-````bash
-image: <your unique ACR name>.azurecr.io/azure-vote-front:v2
-````
-
-### 3.8.3. Deploy Azure-vote app using Helm
-
-Deploying the azure-vote app using helm can be done with this command, which will give the Helm deployment a name ````azvote```` and use the helm chart in the ````azvote-helmchart```` (indicated by the dot):
-
-````bash
-helm install azvote .
-````
-
-After some time, you should be able to access the vote app in your browser. To find out when it is available, use ````kubectl get services````
-
-### 3.8.4. Helm Upgrade
-
-One of the advantages with Helm is that configuration values can be separated from values that are more static. Have a look at the file ````values.yaml```` which contains configurations that we can change dynamically. For example, you can upgrade your current deployment and give it new configuration values from the command line.
-
-To modify the application, use the command ````helm upgrade````, and send some new configuration values to it:
-
-````bash
-helm upgrade azvote . --set title="Beer" --set value1="Industry Lager" --set value2="Cask Ale"
-````
-
-Much better!
-
-<p align="left">
-  <img width="75%" height="75%" hspace="0" src="./media/beer4.png">
-</p>
-
-### 3.8.5. Cleaning up
-
-To keep things tidy in the cluster, delete the application you just deployed with helm
-
-````bash
-helm delete azvote
-
-````
-
-This will remove all the pods and services, and other resources related to the application.
