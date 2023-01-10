@@ -237,9 +237,30 @@ To see the application in action, open a web browser to the external IP address.
 
 # 3.7 Storage options in AKS
 
+## 3.7.1   List storage classes
+
+
+## 3.7.2  Create PVC
+
+
+## 3.7.3  Create pod using the PVC 
+
+
 
 # 3.8 Secret managementin AKS
 
+# 3.8.1  List secrets
+
+
+# 3.8.2 create secret
+
+
+# 3.8.3 Use secret
+
+
+
+# 3.8.4 Bonus exercise
+https://learn.microsoft.com/en-us/azure/aks/use-kms-etcd-encryption
 
 
 # 3.9. Clean-up
