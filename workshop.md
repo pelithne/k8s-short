@@ -237,26 +237,8 @@ To see the application in action, open a web browser to the external IP address.
 
 
 
-# 3.7 Storage options in AKS
-
-## 3.7.1   List storage classes
-
-
-## 3.7.2  Create PVC
-* using azure files
-* place content in volume
-* display content on web page
-* edit content
-* display again
-
-
-## 3.7.3  Create pod using the PVC 
-
-
-
-# 3.8 Secret managementin AKS
-
-
+# 3.8 Secret management in AKS
+The exercise below is using standard Kubernetes secrets. This is not recommended from a security point of view, but the idea here is to introduce the concept. There are things you can/should do to increase security later on.
 
 ## 3.8.1 create secret
 
@@ -264,7 +246,7 @@ Create files that will be used as input to the secret, and echo some text string
 
 ```bash
 $ echo -n "user" > ./user.txt
-$ echo -n "secretpassword" > ./pass.txt
+$ echo -n "verysecretpassword" > ./pass.txt
 ```
 
 Use kubectl create secret to generate a secret using the files just created
@@ -280,10 +262,10 @@ kubectl get secrets
 ```
 
 
-## 3.8.2 Use secret
+## 3.8.2 Use the secret
 For this example, we will insert the secret into an environmentvariable in a pod. For convenience we will continue to use the azure-vote container.
 
-To use the secret in the pod, you need to edit the manifest once again. At the end of the ````Deployment```` specification for ````azure-vote-fron```` Change the following:
+To use the secret in the pod, you need to edit the manifest once again. At the end of the ````Deployment```` section for ````azure-vote-front```` Change the following:
 ````
       env:
         - name: REDIS
@@ -295,12 +277,12 @@ To look like this
       env:
         - name: REDIS
           value: "azure-vote-back"
-        - name: USER
+        - name: USERNAME
           valueFrom:
             secretKeyRef:
               name: credentials
               key: user.txt
-        - name: PASS
+        - name: PASSWORD
           valueFrom:
             secretKeyRef:
               name: credentials
@@ -320,7 +302,7 @@ First get the name of the pod
 kubectl get pods
 ````
 
-You should see two pods. One of them will be named something like ````azure-vote-front-d94895c88-p52sr````. This is the pod you want to reach.
+You should see two pods. One of them will be named something like ````azure-vote-front-d94895c88-p52sr````. This is the pod you want to access.
 
 Use ````kubectl exec <name of the pod> -- sh```` to access the pod:
 
@@ -340,6 +322,24 @@ To exit the container, just type:
 ````
 exit
 ````
+
+
+
+
+# 3.7 Storage options in AKS
+
+## 3.7.1   List storage classes
+
+
+## 3.7.2  Create PVC
+* using azure files
+* place content in volume
+* display content on web page
+* edit content
+* display again
+
+
+## 3.7.3  Create pod using the PVC 
 
 
 
