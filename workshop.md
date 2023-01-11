@@ -51,7 +51,7 @@ git clone https://github.com/pelithne/k8s-short.git
 Then cd into the repository directory:
 
 ````bash
-cd k8s
+cd k8s-short
 ````
 
 ## 3.2. View the code
