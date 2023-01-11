@@ -87,7 +87,7 @@ The reason it needs to be unique, is that your ACR will get a Fully Qualified Do
 The command below will create the container registry and place it in the Resource Group you created previously.
 
 ````bash
-az acr create --name <your unique ACR name> --resource-group <resource-group-name> --sku basic --admin-enabled true
+az acr create --name <your unique ACR name> --resource-group <resource-group-name> --sku basic
 ````
 
 ## 3.5. Build images using ACR
@@ -256,21 +256,94 @@ To see the application in action, open a web browser to the external IP address.
 
 # 3.8 Secret managementin AKS
 
-## 3.8.1  List secrets
-````kubectl get secrets -all-namespaces````
-
-## 3.8.2 create secret
-````kubectl create secrets ...````
 
 
-## 3.8.3 Use secret
-* Create pod using secret as environment variable
-* exec into container
-* print environment variables
+## 3.8.1 create secret
+
+Create files that will be used as input to the secret, and echo some text strings into the files. 
+
+```bash
+$ echo -n "user" > ./user.txt
+$ echo -n "secretpassword" > ./pass.txt
+```
+
+Use kubectl create secret to generate a secret using the files just created
+
+```bash
+kubectl create secret generic credentials --from-file=./user.txt --from-file=./pass.txt
+```
+
+Check to see that your secret has been created
+
+```bash
+kubectl get secrets
+```
+
+
+## 3.8.2 Use secret
+For this example, we will insert the secret into an environmentvariable in a pod. For convenience we will continue to use the azure-vote container.
+
+To use the secret in the pod, you need to edit the manifest once again. At the end of the ````Deployment```` specification for ````azure-vote-fron```` Change the following:
+````
+      env:
+        - name: REDIS
+          value: "azure-vote-back"
+````
+
+To look like this
+````    
+      env:
+        - name: REDIS
+          value: "azure-vote-back"
+        - name: USER
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: user.txt
+        - name: PASS
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: pass.txt
+````
+
+After this, just re-apply the configuration 
+
+````
+kubectl apply -f azure-vote-all-in-one-redis.yaml
+````
+
+After a few moments, you should be able to log into the pod and check the environment variables. Use the following commands to ````exec```` into the container.
+
+First get the name of the pod
+````
+kubectl get pods
+````
+
+You should see two pods. One of them will be named something like ````azure-vote-front-d94895c88-p52sr````. This is the pod you want to reach.
+
+Use ````kubectl exec <name of the pod> -- sh```` to access the pod:
+
+````
+kubectl exec -it azure-vote-front-d94895c88-p52sr -- sh
+````
+
+Now, list the environment variables in the pod with the ````printenv```` command
+
+````
+printenv
+````
+
+This will give you a long list of environment varibles. You should be able to find the username and password variables you created.
+
+To exit the container, just type:
+````
+exit
+````
 
 
 
-## 3.8.4 Bonus exercise
+## 3.8.3 Bonus exercise
 https://learn.microsoft.com/en-us/azure/aks/use-kms-etcd-encryption
 
 
