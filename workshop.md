@@ -8,8 +8,10 @@ You will go through the following steps to complete the workshop:
 * Setup Azure Container Registry to build and store docker images
 * Create Kubernetes Cluster using AKS (Azure Kubernetes Service)
 * Deploy and expose applications
+## TODO:  Cluster upgrade. 
 * Storage mounting options in AKS ​
 * Secret Management in AKS
+
 
 
 # 2. Prerequisites
@@ -43,7 +45,7 @@ Start cloud shell by typing the address ````shell.azure.com```` into a web brows
 The code for this workshop is located in the same repository that you are looking at now. To *clone* the repository to your cloud shell, do this:
 
 ```bash
-git clone https://github.com/pelithne/k8s.git
+git clone https://github.com/pelithne/k8s-short.git
 ```
 
 Then cd into the repository directory:
@@ -241,6 +243,11 @@ To see the application in action, open a web browser to the external IP address.
 
 
 ## 3.7.2  Create PVC
+* using azure files
+* place content in volume
+* display content on web page
+* edit content
+* display again
 
 
 ## 3.7.3  Create pod using the PVC 
@@ -249,17 +256,21 @@ To see the application in action, open a web browser to the external IP address.
 
 # 3.8 Secret managementin AKS
 
-# 3.8.1  List secrets
+## 3.8.1  List secrets
+````kubectl get secrets -all-namespaces````
+
+## 3.8.2 create secret
+````kubectl create secrets ...````
 
 
-# 3.8.2 create secret
+## 3.8.3 Use secret
+* Create pod using secret as environment variable
+* exec into container
+* print environment variables
 
 
-# 3.8.3 Use secret
 
-
-
-# 3.8.4 Bonus exercise
+## 3.8.4 Bonus exercise
 https://learn.microsoft.com/en-us/azure/aks/use-kms-etcd-encryption
 
 
