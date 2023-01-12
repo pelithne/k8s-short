@@ -235,12 +235,23 @@ To see the application in action, open a web browser to the external IP address.
 ![Image of Kubernetes cluster on Azure](./media/azure-vote.png)
 
 
+## 3.6.1 If you have the time - cluster update
+Upgrading an AKS cluster is pretty straight forward, in its basic form. If you want to learn more details, feel free to have a look here:
+
+https://learn.microsoft.com/en-us/azure/aks/upgrade-cluster
 
 
-# 3.8 Secret management in AKS
+To updade your cluster to version ````1.25.2```` just run the following command:
+````
+az aks upgrade --resource-group <resource-group-name> --name k8s --kubernetes-version 1.24.3
+````
+
+
+
+# 3.7 Secret management in AKS
 The exercise below is using standard Kubernetes secrets. This is not recommended from a security point of view, but the idea here is to introduce the concept. There are things you can/should do to increase security later on.
 
-## 3.8.1 create secret
+## 3.7.1 create secret
 
 Create files that will be used as input to the secret, and echo some text strings into the files. 
 
@@ -262,7 +273,7 @@ kubectl get secrets
 ```
 
 
-## 3.8.2 Use the secret
+## 3.7.2 Use the secret
 For this example, we will insert the secret into an environmentvariable in a pod. For convenience we will continue to use the azure-vote container.
 
 To use the secret in the pod, you need to edit the manifest once again. At the end of the ````Deployment```` section for ````azure-vote-front```` Change the following:
@@ -326,20 +337,124 @@ exit
 
 
 
-# 3.7 Storage options in AKS
+# 3.8 Storage options in AKS
 
-## 3.7.1   List storage classes
-
-
-## 3.7.2  Create PVC
-* using azure files
-* place content in volume
-* display content on web page
-* edit content
-* display again
+## 3.8.1   List storage classes
 
 
-## 3.7.3  Create pod using the PVC 
+## 3.8.2  Create volume
+Create storage account
+````
+az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS
+````
+
+
+
+Export the connection string as an environment variable, this is used when creating the Azure file share
+
+````
+export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv)
+````
+
+Create the file share
+
+````
+az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
+````
+
+Get storage account key
+
+````
+STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
+````
+
+Validate that the environment variables were correctly populated, by echoing the content
+
+````
+# Echo storage account name and key
+echo  $AKS_PERS_STORAGE_ACCOUNT_NAME
+echo  $STORAGE_KEY
+````
+
+Create a kubernetes secret to hold the storage account name and key
+
+````
+kubectl create secret generic azure-secret --from-literal=azurestorageaccountname=$AKS_PERS_STORAGE_ACCOUNT_NAME --from-literal=azurestorageaccountkey=$STORAGE_KEY
+````
+Now you need to edit the manifest once again. You need to add two things, a ````volume```` definition and a ````volumeMount````
+
+For the volumeMount, change the following 
+
+````
+      containers:
+      - name: azure-vote-front
+        image: mcr.microsoft.com/azuredocs/azure-vote-front:v2
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+
+````
+
+to look like below (in other words, add the volumeMount at the end of the ````containers```` section)
+
+````
+      containers:
+      - name: azure-vote-front
+        image: mcr.microsoft.com/azuredocs/azure-vote-front:v2
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+        volumeMounts:
+        - name: azure
+          mountPath: /mnt/azure
+````
+
+For the ````volume```` defintion, add the following at the very end of the ````deployment```` section for ````azure-vote-front````. 
+
+## Note: Make sure intentation is correct. YAML is really picky when it comes to that. The ````volume```` statement should be on the same level as e.g. ````env```` and ````containers````
+
+````
+  volumes:
+  - name: azure
+    csi:
+      driver: file.csi.azure.com
+      readOnly: false
+      volumeAttributes:
+        secretName: azure-secret  # required
+        shareName: aksshare  # required
+        mountOptions: "dir_mode=0777,file_mode=0777,cache=strict,actimeo=30,nosharesock"  # optional
+````
+
+Now its time to apply the manifest again:
+
+````
+kubectl apply -f azure-vote-all-in-one-redis.yaml
+````
+
+After some time, you can once again ````exec```` into the container to make sure that the volume is where it should be
+
+````
+exec -it <pod name> -- sh
+ls -l /mnt/azure
+````
+
+Another way of checking the mount is to use ````kubectl describe````
+
+````
+kubectl describe pod <pod name>
+````
+
+In the output you will find (among other things) that you have a mount at /mnt/azure.
+
+## 3.8.3  Create pod using the PVC 
 
 
 
