@@ -339,36 +339,33 @@ exit
 
 # 3.8 Storage options in AKS
 
-## 3.8.1   List storage classes
-
 
 ## 3.8.2  Create volume
-Create storage account
+Create storage account. Give the storage account a unique name (e.g. use your signum)
 ````
-az storage account create -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -l $AKS_PERS_LOCATION --sku Standard_LRS
+az storage account create -n <unique name for storage account> -g <resource-group-name> -l westeurope  --sku Standard_LRS
 ````
 
 
-
-Export the connection string as an environment variable, this is used when creating the Azure file share
+Export the connection string as an environment variable, this will be used when creating the Azure file share
 
 ````
-export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv)
+export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n <unique name for storage account> -g <resource-group-name> -o tsv)
 ````
 
 Create the file share
 
 ````
-az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
+az storage share create -n <unique name for storage account> --connection-string $AZURE_STORAGE_CONNECTION_STRING
 ````
 
 Get storage account key
 
 ````
-STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
+STORAGE_KEY=$(az storage account keys list --resource-group <resource-group-name> --account-name <unique name for storage account> --query "[0].value" -o tsv)
 ````
 
-Validate that the environment variables were correctly populated, by echoing the content
+Validate that the environment variables were correctly populated, by echoing the content. 
 
 ````
 # Echo storage account name and key
@@ -379,7 +376,7 @@ echo  $STORAGE_KEY
 Create a kubernetes secret to hold the storage account name and key
 
 ````
-kubectl create secret generic azure-secret --from-literal=azurestorageaccountname=$AKS_PERS_STORAGE_ACCOUNT_NAME --from-literal=azurestorageaccountkey=$STORAGE_KEY
+kubectl create secret generic azure-secret --from-literal=azurestorageaccountname=<unique name for storage account> --from-literal=azurestorageaccountkey=$STORAGE_KEY
 ````
 Now you need to edit the manifest once again. You need to add two things, a ````volume```` definition and a ````volumeMount````
 
@@ -453,8 +450,6 @@ kubectl describe pod <pod name>
 ````
 
 In the output you will find (among other things) that you have a mount at /mnt/azure.
-
-## 3.8.3  Create pod using the PVC 
 
 
 
