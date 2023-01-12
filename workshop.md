@@ -135,7 +135,7 @@ az aks create --resource-group <resource-group-name> --name k8s --node-count 2 -
 
 The creation time for the cluster should be around 5 minutes, so this might be a good time for a leg stretcher and/or cup of coffee!
 
-### 3.6.2. Validate towards Kubernetes Cluster
+### 3.6.2. Get access to the AKS Cluster
 
 In order to use `kubectl` you need to connect to the Kubernetes cluster, using the following command (which assumes that you have used the naming proposals above):
 
@@ -152,17 +152,17 @@ kubectl get nodes
 
 ### 3.6.3. Update a Kubernetes manifest file
 
-You have built a docker image with the sample application, in the Azure Container Registry (ACR). To deploy the application to Kubernetes, you must update the image name in the Kubernetes manifest file to include the ACR login server name. Currently the manifest "points" to a container located in the microsoft repository in *docker hub*.
+You have built a docker image with the sample application, in the Azure Container Registry (ACR). To deploy the application to Kubernetes, you must update the image name in the Kubernetes manifest file to include the ACR name. Currently the manifest "points" to a container located in a microsoft repository.
 
-The manifest file to modify is the one that was downloaded when cloning the repository in a previous step. The location of the manifest file is in the ````./k8s/application/azure-vote-app```` directory.
+The file to modify is located in the ````./k8s-short/application/azure-vote-app```` directory.
 
-The sample manifest file from the git repo cloned in the first tutorial uses the login server name of *microsoft*. Open this manifest file with a text editor, such as `code`:
+Open this manifest file with a text editor, such as `code`:
 
 ```bash
 code azure-vote-all-in-one-redis.yaml
 ```
 
-Replace *microsoft* with your ACR login server name. The following example shows the original content and where you need to replace the **image**.
+Replace the *microsoft* server with your Azure Container Registry. The following example shows the original content and how you need to modify it.
 
 Original:
 
@@ -192,20 +192,12 @@ To deploy your application, use the ```kubectl apply``` command. This command pa
 kubectl apply -f azure-vote-all-in-one-redis.yaml
 ```
 
-When the manifest is applied, a pod and a service is created. The pod contains the "business logic" of your application and the service exposes the application to the internet. This process can take a few minutes, in part because the container image needs to be downloaded from ACR to the Kubernetes Cluster. 
+When the manifest is applied, a pod and a service is created. The pod contains the "business logic" of your application and the service exposes the application to the internet.  
 
-To monitor the progress of the download, you can use ``kubectl get pods`` and ``kubectl describe pod``, like this:
-
-First use ``kubectl get pods`` to find the name of your pod:
+To monitor the progress of the deployment, you can use ``kubectl get pods``, like this:
 
 ```bash
 kubectl get pods
-```
-
-Then use ``kubectl describe pod`` with the name of your pod:
-
-```bash
-kubectl describe pod <pod name>
 ```
 
 You can also use ``kubectl describe`` to trouble shoot any problems you might have with the deployment (for instance, a common problem is **Error: ErrImagePull**, which can be caused by incorrect credentials or incorrect address/path to the container in ACR. It can also happen if the Kubernetes Cluster does not have read permission in the Azure Container Registry.
@@ -256,7 +248,7 @@ az aks upgrade --resource-group <resource-group-name> --name k8s --kubernetes-ve
 
 
 # 3.7 Secret management in AKS
-The exercise below is using standard Kubernetes secrets. This is not recommended from a security point of view, but the idea here is to introduce the concept. There are things you can/should do to increase security later on.
+### Note: The exercise below is using standard Kubernetes secrets. This is not recommended from a security point of view, but the idea here is to introduce the concept. There are things you can/should do to increase security later on.
 
 ## 3.7.1 create secret
 
@@ -281,7 +273,7 @@ kubectl get secrets
 
 
 ## 3.7.2 Use the secret
-For this example, we will insert the secret into an environmentvariable in a pod. For convenience we will continue to use the azure-vote container.
+For this example, we will insert the secret into environment variables in a pod. For convenience we will continue to use the azure-vote container.
 
 To use the secret in the pod, you need to edit the manifest once again. At the end of the ````Deployment```` section for ````azure-vote-front```` Change the following:
 ````
@@ -322,19 +314,26 @@ kubectl get pods
 
 You should see two pods. One of them will be named something like ````azure-vote-front-d94895c88-p52sr````. This is the pod you want to access.
 
-Use ````kubectl exec <name of the pod> -- sh```` to access the pod:
+Use ````kubectl exec <name of the pod> -- sh```` to access the pod (make sure to replace the pod name with the name of your pod):
 
 ````
 kubectl exec -it azure-vote-front-d94895c88-p52sr -- sh
 ````
 
-Now, list the environment variables in the pod with the ````printenv```` command
+Once inside the pod, list the environment variables in the pod with the ````printenv```` command
 
 ````
 printenv
 ````
 
 This will give you a long list of environment varibles. You should be able to find the username and password variables you created.
+
+Alternatively, you can achive the same result with a one-liner:
+
+````
+kubectl exec -it azure-vote-front-d94895c88-p52sr -- printenv
+````
+
 
 To exit the container, just type:
 ````
@@ -346,29 +345,32 @@ exit
 
 # 3.8 Storage options in AKS
 
+## 3.8.1 Use default storage classes in AKS 
 
-## 3.8.2  Create volume
+TBD
+
+## 3.8.2 If you have the time: Use a file share as a volume 
+
+
 Create storage account. Give the storage account a unique name (e.g. use your signum)
 ````
 az storage account create -n <unique name for storage account> -g <resource-group-name> -l westeurope  --sku Standard_LRS
 ````
 
 
-Export the connection string as an environment variable, this will be used when creating the Azure file share
+Export the storage account connection string as an environment variable, this will be used when creating the Azure file share
 
 ````
 export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n <unique name for storage account> -g <resource-group-name> -o tsv)
 ````
 
-Create the file share
-
-Give the fileshare a useful name, e.g. "aksshare"
+Create the file share, inside the storage account. The fileshare could be named e.g. "aksshare"
 
 ````
 az storage share create -n <file share name> --connection-string $AZURE_STORAGE_CONNECTION_STRING
 ````
 
-Get storage account key
+Get storage account key. This will be needed for the pod to access the storage.
 
 ````
 STORAGE_KEY=$(az storage account keys list --resource-group <resource-group-name> --account-name <unique name for storage account> --query "[0].value" -o tsv)
@@ -380,14 +382,15 @@ Validate that the environment variable was correctly populated, by echoing the c
 echo  $STORAGE_KEY
 ````
 
-Create a kubernetes secret to hold the storage account name and key
+Create a kubernetes secret to hold the storage account name and key. Like in the previous example, this secret will be used by the pod.
 
 ````
 kubectl create secret generic azure-secret --from-literal=azurestorageaccountname=<unique name for storage account> --from-literal=azurestorageaccountkey=$STORAGE_KEY
 ````
+
 Now you need to edit the manifest once again. You need to add two things, a ````volume```` definition and a ````volumeMount````
 
-For the volumeMount, change the following 
+For the volumeMount, change the following:
 
 ````
       containers:
@@ -421,9 +424,9 @@ to look like below (in other words, add the volumeMount at the end of the ````co
           mountPath: /mnt/azure
 ````
 
-For the ````volume```` defintion, add the following at the very end of the ````deployment```` section for ````azure-vote-front````. 
+For the ````volume```` defintion, add the following at the very end of the ````deployment```` section for ````azure-vote-front````, after the ````env```` section.
 
-## Note: Make sure intentation is correct. YAML is really picky when it comes to that. The ````volume```` statement should be on the same level as ````containers````
+## Note: Make sure intentation is correct. YAML is really picky when it comes to that. The ````volume```` statement should be on the same level as ````containers```` statement
 
 ````
   volumes:
