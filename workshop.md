@@ -240,8 +240,15 @@ Upgrading an AKS cluster is pretty straight forward, in its basic form. If you w
 
 https://learn.microsoft.com/en-us/azure/aks/upgrade-cluster
 
+To show the current kubernetes version in your cluster:
 
-To updade your cluster to version ````1.25.2```` just run the following command:
+````
+az aks show --resource-group <resource-group-name> --name k8s |grep kubernetesVersion
+````
+### note: there is actually a little bit more to it, because nodepools can have different versions, but for our current case this is good enough.
+
+
+To updade your cluster to version ````1.24.3```` just run the following command:
 ````
 az aks upgrade --resource-group <resource-group-name> --name k8s --kubernetes-version 1.24.3
 ````
@@ -355,8 +362,10 @@ export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-stri
 
 Create the file share
 
+Give the fileshare a useful name, e.g. "aksshare"
+
 ````
-az storage share create -n <unique name for storage account> --connection-string $AZURE_STORAGE_CONNECTION_STRING
+az storage share create -n <file share name> --connection-string $AZURE_STORAGE_CONNECTION_STRING
 ````
 
 Get storage account key
@@ -365,11 +374,9 @@ Get storage account key
 STORAGE_KEY=$(az storage account keys list --resource-group <resource-group-name> --account-name <unique name for storage account> --query "[0].value" -o tsv)
 ````
 
-Validate that the environment variables were correctly populated, by echoing the content. 
+Validate that the environment variable was correctly populated, by echoing the content. 
 
 ````
-# Echo storage account name and key
-echo  $AKS_PERS_STORAGE_ACCOUNT_NAME
 echo  $STORAGE_KEY
 ````
 
@@ -416,7 +423,7 @@ to look like below (in other words, add the volumeMount at the end of the ````co
 
 For the ````volume```` defintion, add the following at the very end of the ````deployment```` section for ````azure-vote-front````. 
 
-## Note: Make sure intentation is correct. YAML is really picky when it comes to that. The ````volume```` statement should be on the same level as e.g. ````env```` and ````containers````
+## Note: Make sure intentation is correct. YAML is really picky when it comes to that. The ````volume```` statement should be on the same level as ````containers````
 
 ````
   volumes:
