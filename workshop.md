@@ -8,10 +8,9 @@ You will go through the following steps to complete the workshop:
 * Setup Azure Container Registry to build and store docker images
 * Create Kubernetes Cluster using AKS (Azure Kubernetes Service)
 * Deploy and expose applications
-## TODO:  Cluster upgrade. 
-* Storage mounting options in AKS ​
-* Secret Management in AKS
-
+* Upgrading kuberenetes version of a cluster
+* Use Secret in AKS
+* Mounting storage in AKS ​
 
 
 # 2. Prerequisites
@@ -26,11 +25,11 @@ az account set --subscription <subscription-id>
 
 To make sure you are correctly setup with a working subscription, make sure you can log in to the Azure portal. Go to <https://portal.azure.com> Once logged in, feel free to browse around a little bit to get to know the surroundings!
 
-It might be a good idea to keep a tab with the Azure Portal open during the workshop, to keep track of the Azure resources you create. We will almost exclusively use CLI based tools during the workshop, but everything we do will be visible in the portal, and all the resources we create could also be created using the portal.
+It might be a good idea to keep a tab with the Azure Portal open during the workshop, to keep track of the Azure resources you create. We will only use CLI based tools during the workshop, but everything will be visible in the portal, and all the resources we create could also be created using the portal.
 
 ## 2.3. Azure Cloud Shell
 
-We will use the Azure Cloud Shell (ACS) throughout the workshop for all our command line needs. This is a web based shell that has all the necessary tools (like kubectl, az cli, helm, etc) pre-installed.
+We will use the Azure Cloud Shell throughout the workshop for all our command line needs. This is a web based shell that has all the necessary tools (like kubectl, az cli, helm, etc) pre-installed.
 
 Start cloud shell by typing the address ````shell.azure.com```` into a web browser. If you have not used cloud shell before, you will be asked to create a storage location for cloud shell. Accept that and make sure that you run bash as your shell (not powershell).
 
