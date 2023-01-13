@@ -450,6 +450,14 @@ exec -it <pod name> -- sh
 ls -l /mnt/azure
 ````
 
+While inside the pod, you could create a file in the file share, e.g. by doing
+
+````
+touch hello.txt
+````
+
+If you want to, you can now go into the Azure portal and browse to the resource group you created. Then click on the "Storage Account" resource. When the storage account blade opens up, you can select "File shares" in the left hand navigation bar. When you click file shares, you will see the file share you created previouslsy. Go into that file share, and select "Browse" from the left hand naviation. When you do, you should see the file you just created in the pod (hello.txt).
+
 Another way of checking the mount is to use ````kubectl describe````
 
 ````
