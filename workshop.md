@@ -37,7 +37,7 @@ Start cloud shell by typing the address ````shell.azure.com```` into a web brows
 
 **Protip II: Cloud Shell will time out after 20 minutes of inactivity. When you log back in, you will end up in your home directory, so be sure to ````cd```` into where you are supposed to be.**
 
-# 3. Deploy and expose applications
+# 3. Initial Setup
 
 ## 3.1. Get the code
 
@@ -70,8 +70,6 @@ For instance, you may want to have a look in the ````application/azure-vote-app`
 All resources in Azure exists in a *Resource Group*. The resource group is a "placeholder" for all the resources you create. 
 
 All the resources you create in this workshop will use the same Resource Group. Use the commnd below to create the resource group.
-
-If you are working in a shared subscription, make sure that you create a uniqely named resource group, eg by using your corporate signum.
 
 ````bash
 az group create -n <resource-group-name> -l westeurope
@@ -114,17 +112,16 @@ az acr build --image azure-vote-front:v1 --registry <your unique ACR name> --fil
 
 AKS is the hosted Kubernetes service on Azure.
 
-Kubernetes provides a distributed platform for containerized applications. You build and deploy your own applications and services into a Kubernetes cluster, and let the cluster manage the availability and connectivity. In this step a sample application will be deployed into your own Kubernetes cluster. You will learn how to:
+Kubernetes provides a distributed platform for containerized applications. You build and deploy your own applications into a Kubernetes cluster, and let the cluster manage the availability and connectivity. In this step a sample application will be deployed into your own Kubernetes cluster. You will learn how to:
 
 * Create an AKS Kubernetes Cluster
 * Connect/validate towards the AKS Cluster
 * Update Kubernetes manifest files
 * Run an application in Kubernetes
-* Test the application
 
 ### 3.6.1. Create AKS Cluster
 
-Create an AKS cluster using ````az aks create````. Give the cluster the name  ````k8s````, and run the command:
+Create an AKS cluster using ````az aks create````. Give the cluster a name, e.g.  ````k8s````, and run the command:
 
 ```azurecli
 az aks create --resource-group <resource-group-name> --name k8s --node-count 2 --node-vm-size Standard_D2s_v4 --attach-acr <your unique ACR name>
@@ -132,11 +129,11 @@ az aks create --resource-group <resource-group-name> --name k8s --node-count 2 -
 
 #### note: in the command above, we attach the ACR created previously. This is to allow the AKS cluster to download images from the container registry.
 
-The creation time for the cluster should be around 5 minutes, so this might be a good time for a leg stretcher and/or cup of coffee!
+The creation time for the cluster should be around 5 minutes.
 
 ### 3.6.2. Get access to the AKS Cluster
 
-In order to use `kubectl` you need to connect to the Kubernetes cluster, using the following command (which assumes that you have used the naming proposals above):
+In order to use `kubectl` you need to connect to the Kubernetes cluster, using the following command (which assumes that you named the cluster k8s):
 
 ```azurecli
 az aks get-credentials --resource-group <resource-group-name> --name k8s
@@ -158,6 +155,7 @@ The file to modify is located in the ````./k8s-short/application/azure-vote-app`
 Open this manifest file with a text editor, such as `code`:
 
 ```bash
+cd application/azure-vote-app
 code azure-vote-all-in-one-redis.yaml
 ```
 
@@ -239,7 +237,7 @@ az aks show --resource-group <resource-group-name> --name k8s |grep kubernetesVe
 ### note: there is actually a little bit more to it, because nodepools can have different versions, but for our current case this is good enough.
 
 
-To updade your cluster to version ````1.24.3```` just run the following command:
+To upgrade your cluster to version ````1.24.3```` just run the following command:
 ````
 az aks upgrade --resource-group <resource-group-name> --name k8s --kubernetes-version 1.24.3
 ````
