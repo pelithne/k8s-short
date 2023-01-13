@@ -127,7 +127,7 @@ Create an AKS cluster using ````az aks create````. Give the cluster a name, e.g.
 az aks create --resource-group <resource-group-name> --name k8s --node-count 2 --node-vm-size Standard_D2s_v4 --attach-acr <your unique ACR name>
 ```
 
-#### note: in the command above, we attach the ACR created previously. This is to allow the AKS cluster to download images from the container registry.
+### note: in the command above, we attach the ACR created previously. This is to allow the AKS cluster to download images from the container registry.
 
 The creation time for the cluster should be around 5 minutes.
 
@@ -224,7 +224,7 @@ To see the application in action, open a web browser to the external IP address.
 ![Image of Kubernetes cluster on Azure](./media/azure-vote.png)
 
 
-## 3.6.1 If you have the time - cluster upgrade
+### 3.6.1 If you have the time - cluster upgrade
 Upgrading an AKS cluster is pretty straight forward, in its basic form. If you want to learn more details, feel free to have a look here:
 
 https://learn.microsoft.com/en-us/azure/aks/upgrade-cluster
@@ -244,10 +244,10 @@ az aks upgrade --resource-group <resource-group-name> --name k8s --kubernetes-ve
 
 
 
-# 3.7 Secret management in AKS
+### 3.7 Secret management in AKS
 ### Note: The exercise below is using standard Kubernetes secrets. This is not recommended from a security point of view, but the idea here is to introduce the concept. There are things you can/should do to increase security later on.
 
-## 3.7.1 create secret
+### 3.7.1 create secret
 
 Create files that will be used as input to the secret, and echo some text strings into the files. 
 
@@ -269,7 +269,7 @@ kubectl get secrets
 ```
 
 
-## 3.7.2 Use the secret
+### 3.7.2 Use the secret
 For this example, we will insert the secret into environment variables in a pod. For convenience we will continue to use the azure-vote container.
 
 To use the secret in the pod, you need to edit the manifest once again. At the end of the ````Deployment```` section for ````azure-vote-front```` Change the following:
@@ -340,13 +340,13 @@ exit
 
 
 
-# 3.8 Storage options in AKS
+## 3.8 Storage options in AKS
 
-## 3.8.1 Use default storage classes in AKS 
+### 3.8.1 Use default storage classes in AKS 
 
 TBD
 
-## 3.8.2 If you have the time: Use a file share as a volume 
+### 3.8.2 If you have the time: Use a file share as a volume 
 
 
 Create storage account. Give the storage account a unique name (e.g. use your signum)
@@ -423,7 +423,7 @@ to look like below (in other words, add the volumeMount at the end of the ````co
 
 For the ````volume```` defintion, add the following at the very end of the ````deployment```` section for ````azure-vote-front````, after the ````env```` section.
 
-## Note: Make sure intentation is correct. YAML is really picky when it comes to that. The ````volume```` statement should be on the same level as ````containers```` statement
+### Note: Make sure intentation is correct. YAML is really picky when it comes to that. The ````volume```` statement should be on the same level as ````containers```` statement
 
 ````
   volumes:
@@ -468,11 +468,11 @@ In the output you will find (among other things) that you have a mount at /mnt/a
 
 
 
-## 3.8.3 Bonus exercise
+### 3.8.3 Bonus exercise
 https://learn.microsoft.com/en-us/azure/aks/use-kms-etcd-encryption
 
 
-# 3.9. Clean-up
+## 3.9. Clean-up
 
 Make sure the application is deleted from the cluster (otherwise a later step, which is using Helm, might have issues...)
 
