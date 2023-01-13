@@ -224,7 +224,7 @@ To see the application in action, open a web browser to the external IP address.
 ![Image of Kubernetes cluster on Azure](./media/azure-vote.png)
 
 
-## 3.6.1 If you have the time - cluster update
+## 3.6.1 If you have the time - cluster upgrade
 Upgrading an AKS cluster is pretty straight forward, in its basic form. If you want to learn more details, feel free to have a look here:
 
 https://learn.microsoft.com/en-us/azure/aks/upgrade-cluster
