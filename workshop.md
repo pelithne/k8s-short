@@ -361,12 +361,90 @@ exit
 
 ## 3.8 Storage options in AKS
 
-### 3.8.1 Use default storage classes in AKS 
+### 3.8.1 Dynamically create volume using Azure Disk
 
-TBD
+The easiest way to create persistant storage for a pod in AKS is to use the dynamic option. In this exercise you will be using one of the built in storage classes, to make it even easier.
 
-### 3.8.2 If you have the time: Use a file share as a volume 
+The first thing you need to do is to create a Persitant Volume Claim (PVC). in order to do that, you can create a file with the kubernetes manifest for a PVC.
 
+Create a file named azure-pvc.yaml, with the following content:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: azure-managed-disk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: managed-csi
+  resources:
+    requests:
+      storage: 5Gi
+```
+
+The create the PVC using the ````kubectl apply```` command:
+
+````
+kubectl apply -f azure-pvc.yaml
+````
+
+Next step is to use the PVC in a pod. For simplicity, we will keep using the same manifest as before. 
+
+Edit ````azure-vote-all-in-one-redis.yaml```` to add the ````volume```` and ````volumeMounts```` sections. 
+
+Before:
+
+```yaml
+      containers:
+      - name: azure-vote-front
+        image: <your unique ACR name>.azurecr.io/azure-vote-front:v1
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+
+```
+
+After (in other words, add the volumeMount at the end of the ````containers```` section and add the ````volumes```` section at the same indentation level as the ````containers```` section).
+
+```yaml
+      containers:
+      - name: azure-vote-front
+        image: <your unique ACR name>.azurecr.io/azure-vote-front:v1
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+        volumeMounts:
+        - mountPath: "/mnt/azuredisk"
+          name: disk
+      volumes:
+      - name: disk
+        persistentVolumeClaim:
+        claimName: azure-managed-disk
+```
+
+Now, re-configure the pod using the ````kubectl apply```` command:
+
+````
+kubectl apply -f azure-vote-all-in-one-redis.yaml
+````
+
+To check that the storage was created, you can exec into the pod and run the ````ls```` command:
+
+````
+kubectl -ti <name of the pod> -- sh
+ls -l /mnt/azuredisk
+
+
+### 3.8.2 If you have the time: Use a file share as a volume, this time with static mode
 
 Create storage account. Give the storage account a unique name (e.g. use your signum)
 ````
@@ -408,10 +486,10 @@ Now you need to edit the manifest once again. You need to add two things, a ````
 
 For the volumeMount, change the following:
 
-````
+```yaml
       containers:
       - name: azure-vote-front
-        image: mcr.microsoft.com/azuredocs/azure-vote-front:v2
+        image: <your unique ACR name>.azurecr.io/azure-vote-front:v1
         ports:
         - containerPort: 80
         resources:
@@ -420,14 +498,14 @@ For the volumeMount, change the following:
           limits:
             cpu: 500m
 
-````
+```
 
 to look like below (in other words, add the volumeMount at the end of the ````containers```` section)
 
-````
+```yaml
       containers:
       - name: azure-vote-front
-        image: mcr.microsoft.com/azuredocs/azure-vote-front:v2
+        image: <your unique ACR name>.azurecr.io/azure-vote-front:v1
         ports:
         - containerPort: 80
         resources:
@@ -438,7 +516,7 @@ to look like below (in other words, add the volumeMount at the end of the ````co
         volumeMounts:
         - name: azure
           mountPath: /mnt/azure
-````
+```
 
 For the ````volume```` definition, add the following at the very end of the ````deployment```` section for ````azure-vote-front````, after the ````env```` section.
 
