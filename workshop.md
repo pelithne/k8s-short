@@ -431,6 +431,8 @@ After (in other words, add the volumeMount at the end of the ````containers```` 
         claimName: azure-managed-disk
 ```
 
+### Note: Make sure indentation is correct. YAML is really picky when it comes to that. The ````volumes```` statement should be on the same indentation level as the ````containers```` statement
+
 Now, re-apply the pod definition using the ````kubectl apply```` command:
 
 ````
