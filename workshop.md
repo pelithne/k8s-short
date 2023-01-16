@@ -365,7 +365,7 @@ exit
 
 The easiest way to create persistant storage for a pod in AKS is to use the dynamic option. In this exercise you will be using one of the built in storage classes, to make it even easier.
 
-The first thing you need to do is to create a Persitant Volume Claim (PVC). in order to do that, you can create a file with the kubernetes manifest for a PVC.
+The first thing you need to do is to create a Persitant Volume Claim (PVC). In order to do that, you can create a file with the kubernetes manifest for a PVC.
 
 Create a file named azure-pvc.yaml, with the following content:
 
@@ -383,7 +383,7 @@ spec:
       storage: 5Gi
 ```
 
-The create the PVC using the ````kubectl apply```` command:
+Then create the PVC using the ````kubectl apply```` command:
 
 ````
 kubectl apply -f azure-pvc.yaml
@@ -431,7 +431,7 @@ After (in other words, add the volumeMount at the end of the ````containers```` 
         claimName: azure-managed-disk
 ```
 
-Now, re-configure the pod using the ````kubectl apply```` command:
+Now, re-apply the pod definition using the ````kubectl apply```` command:
 
 ````
 kubectl apply -f azure-vote-all-in-one-redis.yaml
@@ -442,6 +442,7 @@ To check that the storage was created, you can exec into the pod and run the ```
 ````
 kubectl -ti <name of the pod> -- sh
 ls -l /mnt/azuredisk
+````
 
 
 ### 3.8.2 If you have the time: Use a file share as a volume, this time with static mode
