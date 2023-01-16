@@ -127,7 +127,7 @@ Create an AKS cluster using ````az aks create````. Give the cluster a name, e.g.
 az aks create --resource-group <resource-group-name> --name k8s --node-count 2 --node-vm-size Standard_D2s_v4 --no-ssh-key --attach-acr <your unique ACR name>
 ```
 
-### note: in the command above, we attach the ACR created previously. This is to allow the AKS cluster to download images from the container registry.
+### note: in the command above, we attach the ACR created previously. This is to allow the AKS cluster to download images from the container registry. Behind the scenes, this is using Azure Managed Identity.
 
 The creation time for the cluster should be around 5 minutes.
 
@@ -224,7 +224,7 @@ To see the application in action, open a web browser to the external IP address.
 ![Image of Kubernetes cluster on Azure](./media/azure-vote.png)
 
 
-### 3.6.1 If you have the time - cluster upgrade
+### 3.6.5 If you have the time - cluster upgrade
 Upgrading an AKS cluster is pretty straight forward, in its basic form. If you want to learn more details, feel free to have a look here:
 
 https://learn.microsoft.com/en-us/azure/aks/upgrade-cluster
@@ -342,7 +342,7 @@ Once inside the pod, list the environment variables in the pod with the ````prin
 printenv
 ````
 
-This will give you a long list of environment varibles. You should be able to find the username and password variables you created.
+This will give you a long list of environment variables. You should be able to find the username and password variables you created.
 
 Alternatively, you can achive the same result with a one-liner:
 
@@ -442,7 +442,7 @@ to look like below (in other words, add the volumeMount at the end of the ````co
 
 For the ````volume```` definition, add the following at the very end of the ````deployment```` section for ````azure-vote-front````, after the ````env```` section.
 
-### Note: Make sure indentation is correct. YAML is really picky when it comes to that. The ````volume```` statement should be on the same level as ````containers```` statement
+### Note: Make sure indentation is correct. YAML is really picky when it comes to that. The ````volumes```` statement should be on the same indentation level as the ````containers```` statement
 
 ````
   volumes:
@@ -451,9 +451,8 @@ For the ````volume```` definition, add the following at the very end of the ````
       driver: file.csi.azure.com
       readOnly: false
       volumeAttributes:
-        secretName: azure-secret  # required
-        shareName: aksshare  # required
-        mountOptions: "dir_mode=0777,file_mode=0777,cache=strict,actimeo=30,nosharesock"  # optional
+        secretName: azure-secret
+        shareName: aksshare
 ````
 
 Now its time to apply the manifest again:
