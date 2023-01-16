@@ -15,19 +15,13 @@ You will go through the following steps to complete the workshop:
 
 # 2. Prerequisites
 
-## 2.1 Subscription
-You need a valid Azure subscription. To use a specific subscription, use the ````account```` command like this (with your subscription id):
-````
-az account set --subscription <subscription-id>
-````
-
-## 2.2. Azure Portal
+## 2.1. Azure Portal
 
 To make sure you are correctly setup with a working subscription, make sure you can log in to the Azure portal. Go to <https://portal.azure.com> Once logged in, feel free to browse around a little bit to get to know the surroundings!
 
 It might be a good idea to keep a tab with the Azure Portal open during the workshop, to keep track of the Azure resources you create. We will only use CLI based tools during the workshop, but everything will be visible in the portal, and all the resources we create could also be created using the portal.
 
-## 2.3. Azure Cloud Shell
+## 2.2. Azure Cloud Shell
 
 We will use the Azure Cloud Shell throughout the workshop for all our command line needs. This is a web based shell that has all the necessary tools (like kubectl, az cli, helm, etc) pre-installed.
 
@@ -36,6 +30,12 @@ Start cloud shell by typing the address ````shell.azure.com```` into a web brows
 **Protip: You can use ctrl-c to copy text in cloud shell. To paste you have to use shift-insert, or use the right mouse button -> paste. If you are on a Mac, you can use the "normal" Cmd+C/Cmd+V.**
 
 **Protip II: Cloud Shell will time out after 20 minutes of inactivity. When you log back in, you will end up in your home directory, so be sure to ````cd```` into where you are supposed to be.**
+
+## 2.3. Subscription
+You need a valid Azure subscription. To use a specific subscription, use the ````account```` command like this (with your subscription id):
+````
+az account set --subscription <subscription-id>
+````
 
 # 3. Initial Setup
 
@@ -124,7 +124,7 @@ Kubernetes provides a distributed platform for containerized applications. You b
 Create an AKS cluster using ````az aks create````. Give the cluster a name, e.g.  ````k8s````, and run the command:
 
 ```azurecli
-az aks create --resource-group <resource-group-name> --name k8s --node-count 2 --node-vm-size Standard_D2s_v4 --attach-acr <your unique ACR name>
+az aks create --resource-group <resource-group-name> --name k8s --node-count 2 --node-vm-size Standard_D2s_v4 --no-ssh-key --attach-acr <your unique ACR name>
 ```
 
 ### note: in the command above, we attach the ACR created previously. This is to allow the AKS cluster to download images from the container registry. Behind the scenes, this is using Azure Managed Identity.
@@ -232,14 +232,33 @@ https://learn.microsoft.com/en-us/azure/aks/upgrade-cluster
 To show the current kubernetes version in your cluster:
 
 ````
-az aks show --resource-group <resource-group-name> --name k8s |grep kubernetesVersion
+az aks show --resource-group <resource-group-name> --name k8s --query "kubernetesVersion"
 ````
 ### note: there is actually a little bit more to it, because nodepools can have different versions, but for our current case this is good enough.
 
+Upgrades can only be done to newer versions (downgrades are not possible). To check which versions are available in your region and which versions have eligible upgrades, please run the following command:
 
-To upgrade your cluster to version ````1.24.3```` just run the following command:
+```bash
+az aks get-versions --location westeurope --output table
+```
+
+It will output a table similar to
+```
+KubernetesVersion    Upgrades
+-------------------  -----------------------
+1.25.4               None available
+1.25.2               1.25.4
+1.24.6               1.25.2, 1.25.4
+1.24.3               1.24.6, 1.25.2, 1.25.4
+1.23.12              1.24.3, 1.24.6
+1.23.8               1.23.12, 1.24.3, 1.24.6
+```
+
+From this output you can derive what upgrades are available for your particular cluster version
+
+For example, to upgrade your cluster to version ````1.25.2```` just run the following command:
 ````
-az aks upgrade --resource-group <resource-group-name> --name k8s --kubernetes-version 1.24.3
+az aks upgrade --resource-group <resource-group-name> --name k8s --kubernetes-version 1.25.2
 ````
 
 
@@ -272,7 +291,7 @@ kubectl get secrets
 ### 3.7.2 Use the secret
 For this example, we will insert the secret into environment variables in a pod. For convenience we will continue to use the azure-vote container.
 
-To use the secret in the pod, you need to edit the manifest once again. At the end of the ````Deployment```` section for ````azure-vote-front```` Change the following:
+To use the secret in the pod, you need to edit the manifest in `azure-vote-all-in-one-redis.yaml` once again. At the end of the ````Deployment```` section for ````azure-vote-front```` Change the following:
 ````
       env:
         - name: REDIS
@@ -311,7 +330,7 @@ kubectl get pods
 
 You should see two pods. One of them will be named something like ````azure-vote-front-d94895c88-p52sr````. This is the pod you want to access.
 
-Use ````kubectl exec <name of the pod> -- sh```` to access the pod (make sure to replace the pod name with the name of your pod):
+Use ````kubectl exec -it <name of the pod> -- sh```` to access the pod (make sure to replace the pod name with the name of your pod):
 
 ````
 kubectl exec -it azure-vote-front-d94895c88-p52sr -- sh
@@ -421,9 +440,9 @@ to look like below (in other words, add the volumeMount at the end of the ````co
           mountPath: /mnt/azure
 ````
 
-For the ````volume```` defintion, add the following at the very end of the ````deployment```` section for ````azure-vote-front````, after the ````env```` section.
+For the ````volume```` definition, add the following at the very end of the ````deployment```` section for ````azure-vote-front````, after the ````env```` section.
 
-### Note: Make sure intentation is correct. YAML is really picky when it comes to that. The ````volumes```` statement should be on the same indentation level as the ````containers```` statement
+### Note: Make sure indentation is correct. YAML is really picky when it comes to that. The ````volumes```` statement should be on the same indentation level as the ````containers```` statement
 
 ````
   volumes:
@@ -452,12 +471,12 @@ ls -l /mnt/azure
 While inside the pod, you could create a file in the file share, e.g. by doing
 
 ````
-touch hello.txt
+touch /mnt/azure/hello.txt
 ````
 
-If you want to, you can now go into the Azure portal and browse to the resource group you created. Then click on the "Storage Account" resource. When the storage account blade opens up, you can select "File shares" in the left hand navigation bar. When you click file shares, you will see the file share you created previouslsy. Go into that file share, and select "Browse" from the left hand naviation. When you do, you should see the file you just created in the pod (hello.txt).
+If you want to, you can now go into the Azure portal and browse to the resource group you created. Then click on the "Storage Account" resource. When the storage account blade opens up, you can select "File shares" in the left hand navigation bar. When you click file shares, you will see the file share you created previously. Go into that file share, and select "Overview" from the left hand navigation. When you do, you should see the file you just created in the pod (hello.txt).
 
-Another way of checking the mount is to use ````kubectl describe````
+Another way of checking the mount is to use ````kubectl describe```` (if you are still attached to the pod, make sure to exit back to the cloud shell before running the command)
 
 ````
 kubectl describe pod <pod name>
