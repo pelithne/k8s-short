@@ -449,6 +449,8 @@ ls -l /mnt/azuredisk
 
 ### 3.8.2 If you have the time: Use a file share as a volume, this time with static mode
 
+If you need storage that can be accessed by all pods in a cluster, you can use Azure Files. You can create the file share dynamically, like in the previous example, or statically. In this exercise you will take the hard way, and create it statically. 
+
 Create storage account. Give the storage account a unique name (e.g. use your signum)
 ````
 az storage account create -n <unique name for storage account> -g <resource-group-name> -l westeurope  --sku Standard_LRS
