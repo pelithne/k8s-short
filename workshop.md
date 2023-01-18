@@ -436,8 +436,8 @@ After (in other words, add the volumeMount at the end of the ````containers```` 
           limits:
             cpu: 500m
         volumeMounts:
-        - mountPath: "/mnt/azuredisk"
-          name: disk
+        - name: disk
+          mountPath: "/mnt/azuredisk"
         env:
         - name: REDIS
           value: "azure-vote-back"
@@ -528,6 +528,9 @@ For the volumeMount, change the following:
             cpu: 250m
           limits:
             cpu: 500m
+        volumeMounts:
+        - name: disk
+          mountPath: "/mnt/azuredisk"
 
 ```
 
@@ -545,16 +548,21 @@ to look like below (in other words, add the volumeMount at the end of the ````co
           limits:
             cpu: 500m
         volumeMounts:
+        - name: disk
+          mountPath: "/mnt/azuredisk"
         - name: azure
-          mountPath: /mnt/azure
+          mountPath: "/mnt/azure"
 ```
 
-For the ````volume```` definition, add the following at the very end of the ````deployment```` section for ````azure-vote-front````, after the ````env```` section.
+For the ````volume```` definition, add the following at the very end of the ````deployment```` section for ````azure-vote-front````, after the ````env```` section. If you already have  `volume` section from the previous exercises, just add the missing parts (there should be only one volume segment, which can contain multiple volumes) 
 
 ### Note: Make sure indentation is correct. YAML is really picky when it comes to that. The ````volumes```` statement should be on the same indentation level as the ````containers```` statement
 
 ````
   volumes:
+  - name: disk
+    persistentVolumeClaim:
+      claimName: azure-managed-disk
   - name: azure
     csi:
       driver: file.csi.azure.com
