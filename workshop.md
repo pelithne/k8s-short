@@ -406,6 +406,19 @@ Before:
             cpu: 250m
           limits:
             cpu: 500m
+        env:
+        - name: REDIS
+          value: "azure-vote-back"
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: user.txt
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: pass.txt
 
 ```
 
@@ -425,6 +438,19 @@ After (in other words, add the volumeMount at the end of the ````containers```` 
         volumeMounts:
         - mountPath: "/mnt/azuredisk"
           name: disk
+        env:
+        - name: REDIS
+          value: "azure-vote-back"
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: user.txt
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: credentials
+              key: pass.txt
       volumes:
       - name: disk
         persistentVolumeClaim:
@@ -442,7 +468,7 @@ kubectl apply -f azure-vote-all-in-one-redis.yaml
 To check that the storage was created, you can exec into the pod and run the ````ls```` command:
 
 ````
-kubectl -ti <name of the pod> -- sh
+kubectl -it <name of the pod> -- sh
 ls -l /mnt/azuredisk
 ````
 
