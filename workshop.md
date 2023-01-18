@@ -569,7 +569,7 @@ For the ````volume```` definition, add the following at the very end of the ````
       readOnly: false
       volumeAttributes:
         secretName: azure-secret
-        shareName: aksshare
+        shareName: <file share name>
 ````
 
 Now its time to apply the manifest again:
