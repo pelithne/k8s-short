@@ -566,17 +566,3 @@ kubectl describe pod <pod name>
 ````
 
 In the output you will find (among other things) that you have a mount at /mnt/azure.
-
-
-
-### 3.8.3 Bonus exercise
-https://learn.microsoft.com/en-us/azure/aks/use-kms-etcd-encryption
-
-
-## 3.9. Clean-up
-
-Make sure the application is deleted from the cluster (otherwise a later step, which is using Helm, might have issues...)
-
-````bash
-kubectl delete -f azure-vote-all-in-one-redis.yaml
-````
