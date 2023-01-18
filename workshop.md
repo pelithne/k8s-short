@@ -581,7 +581,7 @@ kubectl apply -f azure-vote-all-in-one-redis.yaml
 After some time, you can once again ````exec```` into the container to make sure that the volume is where it should be
 
 ````
-exec -it <pod name> -- sh
+kubectl exec -ti <pod name> -- sh
 ls -l /mnt/azure
 ````
 
