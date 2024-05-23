@@ -224,7 +224,174 @@ To see the application in action, open a web browser to the external IP address.
 ![Image of Kubernetes cluster on Azure](./media/azure-vote.png)
 
 
-### 3.6.5 If you have the time - cluster upgrade
+### 3.6.5. Update an application in Azure Kubernetes Service (AKS)
+
+After an application has been deployed in Kubernetes, it can be updated by specifying a new container image or image version. When doing so, the update is staged so that only a portion of the deployment is concurrently updated. This staged update enables the application to keep running during the update. It also provides a rollback mechanism if a deployment failure occurs.
+
+In this step the sample Azure Vote app is updated. You learn how to:
+
+* Update the front-end application code
+* Create an updated container image
+* Deploy the updated container image to AKS
+
+### 3.6.6. Increase number of pods
+
+Let's make a change to the sample application, then update the version already deployed to your AKS cluster. 
+
+First we want to make sure that the update can be completed without service interruption. For this to be possible, we need multiple instances of the front end pod. This will enable Kubernetes to update the app as a "rolling update", which means that it will restart the pods in sequence making sure that one or more is always running.
+
+To achieve that, open the sample manifest file `azure-vote-all-in-one-redis.yaml` and change the number of replicas of the ````azure-vote-front```` pod from 1 to 3, on line 34 (or similar).
+
+````bash
+code azure-vote-all-in-one-redis.yaml
+````
+
+Change
+
+```yaml
+kind: Deployment
+metadata:
+  name: azure-vote-front
+spec:
+  replicas: 1
+```
+
+to
+
+```yaml
+kind: Deployment
+metadata:
+  name: azure-vote-front
+spec:
+  replicas: 3
+```
+
+To activate the new configuration, use ````kubectl apply```` in cloud shell:
+
+````bash
+kubectl apply -f azure-vote-all-in-one-redis.yaml
+````
+
+Now you can verify the number of running front-end instances with the ```kubectl get pods``` command:
+
+```bash
+$ kubectl get pods
+NAME                                READY   STATUS    RESTARTS   AGE
+azure-vote-back-769d45cfcb-gk496    1/1     Running   0          51m
+azure-vote-front-74b865bcd9-52xkm   1/1     Running   0          49s
+azure-vote-front-74b865bcd9-94lrz   1/1     Running   0          49s
+azure-vote-front-74b865bcd9-xfsq8   1/1     Running   0          18m
+```
+
+### 3.6.7. Update the application
+
+The sample application source code can be found inside of the *azure-vote* directory. Open the *config_file.cfg* file with an editor, such as `code`:
+
+```bash
+code azure-vote/config_file.cfg
+```
+
+Change the values for *VOTE1VALUE* and *VOTE2VALUE* to different colors. The following example shows the updated color values:
+
+```bash
+# UI Configurations
+TITLE = 'Azure Voting App'
+VOTE1VALUE = 'Blue'
+VOTE2VALUE = 'Purple'
+SHOWHOST = 'false'
+```
+
+Save and close the file.
+
+### 3.6.8. Update the container image
+
+To build a new front-end image, use ```az acr build``` the same way as before, but make sure to change the version from ````v1```` to ````v2````
+
+```bash
+az acr build --image azure-vote-front:v2 --registry <your unique ACR name> --file Dockerfile .
+```
+
+This will build a new container image, with the code changes you did in the previous step. The image will be stored in ACR with the same name as before, but with a new version (v2).
+
+You can check that all went well with the ````az acr repository show-tags```` command:
+
+````bash
+az acr repository show-tags --name <Your ACR Name> --repository azure-vote-front --output table
+````
+
+### 3.6.9. Deploy the updated application
+
+To update the application, you can use  ```kubectl set``` and specify the new application version, but the preferred way is to edit the kubernetes manifest to change the version:
+
+Open the file ````azure-vote-all-in-one-redis.yaml```` again and change ````image:```` from ````<Your ACR Name>.azurecr.io/azure-vote-front:v1```` to ````<Your ACR Name>.azurecr.io/azure-vote-front:v2```` on line 47 (or close to 47...).
+
+Change
+
+```yaml
+    spec:
+      containers:
+      - name: azure-vote-front
+        image: <Your ACR Name>.azurecr.io/azure-vote-front:v1
+```
+
+To
+
+```yaml
+    spec:
+      containers:
+      - name: azure-vote-front
+        image: <Your ACR Name>.azurecr.io/azure-vote-front:v2
+```
+
+And then run:
+
+````bash
+kubectl apply -f azure-vote-all-in-one-redis.yaml
+````
+
+Note in the output of the command, how only the azure-vote-front deployment is *configured* while the others are *unchanged*. This is because the changes made to the manifest only impacts the azure-vote-front deployment. In other words, only the necessary things are changed, while the rest is left untouched.
+
+````bash
+deployment.apps/azure-vote-back unchanged
+service/azure-vote-back unchanged
+deployment.apps/azure-vote-front configured
+service/azure-vote-front unchanged
+````
+
+To monitor the deployment, use the ```kubectl get pods``` command. As the updated application is deployed, your pods are terminated and re-created with the new container image.
+
+```bash
+kubectl get pods
+```
+
+The following example output shows pods terminating and new instances running as the deployment progresses:
+
+```bash
+kubectl get pods
+
+NAME                               READY     STATUS        RESTARTS   AGE
+azure-vote-back-2978095810-gq9g0   1/1       Running       0          5m
+azure-vote-front-1297194256-tpjlg  1/1       Running       0          1m
+azure-vote-front-1297194256-tptnx  1/1       Running       0          5m
+azure-vote-front-1297194256-zktw9  1/1       Terminating   0          1m
+```
+
+### 3.6.10. Test the updated application
+
+To view the updated application, first get the external IP address of the `azure-vote-front` service (will be the same as before, since the service was not updated, only the pod):
+
+```console
+kubectl get service azure-vote-front
+```
+
+Now open a local web browser to the IP address.
+
+![Image of Kubernetes cluster on Azure](./media/vote-app-updated-external.png)
+
+
+
+
+### 3.6.11 cluster upgrade
 Upgrading an AKS cluster is pretty straight forward, in its basic form. If you want to learn more details, feel free to have a look here:
 
 https://learn.microsoft.com/en-us/azure/aks/upgrade-cluster
